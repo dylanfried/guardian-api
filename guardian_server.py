@@ -3,6 +3,7 @@ from flask import request
 import requests
 import json
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 
 app = Flask(__name__)
 
@@ -66,7 +67,14 @@ def articles():
 # ObjectId from the MongoDB
 @app.route("/article/<objectId>")
 def article_retrieval(objectId):
-  return "Retrieving article with objectId: %s" % objectId
+  # Attempt to connect to our database
+  articles_collection = connect_db()
+  a = articles_collection.find_one({'_id': ObjectId(objectId)})
+  article = {}
+  article['id'] = str(a['_id'])
+  article['image_url'] = a['image_url']
+  article['title'] = a['title']
+  return json.dumps(article)
     
 # Article update
 # Used via POST to update an article
