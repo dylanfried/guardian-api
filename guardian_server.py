@@ -1,34 +1,52 @@
 from flask import Flask
+from flask import request
+import requests
+import json
+
 app = Flask(__name__)
 
 # Default route
 @app.route("/")
 def hello():
-    return "Guardian API"
+  return "Guardian API"
 
 # Fetch news
 @app.route("/fetch_news/")
 def fetch_news():
-    return "FETCHING NEWS"
+  # First, get our search term
+  search_term = request.args.get('term')
+  if not search_term:
+    # Search term is necessary
+    return "No search term provided"
+  
+  # Access the Guardian API to grab results
+  request_uri = "http://content.guardianapis.com/search?q=" + search_term + "&format=json&pageSize=5"
+  try:
+    guardian_response = requests.get(request_uri)
+  except requests.ConnectionError:
+    return "Connection Error"
+  guardian_data = json.loads(guardian_response.text)
+  return "FETCHING NEWS with search term: '%s'" % search_term
 
 # Articles
 # Used to query the local MongoDB for articles
 @app.route("/articles/")
 def articles():
-    return "Retrieving matching articles"
+  return "Retrieving matching articles"
     
 # Article retrieval
 # Used to retrieve an article with the given 
 # ObjectId from the MongoDB
 @app.route("/article/<objectId>")
 def article_retrieval(objectId):
-    return "Retrieving article with objectId: %s" % objectId
+  return "Retrieving article with objectId: %s" % objectId
     
 # Article update
 # Used via POST to update an article
 @app.route("/article/", methods=['POST'])
 def article_update():
-    return "Updating article"
+  return "Updating article"
 
 if __name__ == "__main__":
-    app.run()
+  app.debug = True
+  app.run()
