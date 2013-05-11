@@ -30,7 +30,6 @@ def fetch_news():
   except requests.ConnectionError:
     return "Connection Error"
   guardian_data = json.loads(guardian_response.text)
-  print guardian_response.text
   if guardian_data["response"]["status"] == "ok" and guardian_data["response"]["results"]:
     for article in guardian_data["response"]["results"]:
       new_article = {"title":article["webTitle"],
@@ -43,7 +42,24 @@ def fetch_news():
 # Used to query the local MongoDB for articles
 @app.route("/articles/")
 def articles():
-  return "Retrieving matching articles"
+  # First, get our search term
+  search_term = request.args.get('term')
+  if not search_term:
+    # Search term is necessary
+    return "No search term provided"
+    
+  # Attempt to connect to our database
+  articles_collection = connect_db()
+  
+  articles = []
+  for a in articles_collection.find({"terms": search_term}):
+    article = {}
+    article['id'] = str(a['_id'])
+    article['image_url'] = a['image_url']
+    article['title'] = a['title']
+    articles.append(article)
+  
+  return json.dumps(articles)
     
 # Article retrieval
 # Used to retrieve an article with the given 
