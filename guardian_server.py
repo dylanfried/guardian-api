@@ -69,6 +69,8 @@ def articles():
 def article_retrieval(objectId):
   # Attempt to connect to our database
   articles_collection = connect_db()
+  
+  # Find the article and prepare it for display
   a = articles_collection.find_one({'_id': ObjectId(objectId)})
   article = {}
   article['id'] = str(a['_id'])
@@ -80,7 +82,16 @@ def article_retrieval(objectId):
 # Used via POST to update an article
 @app.route("/article/", methods=['POST'])
 def article_update():
-  return "Updating article"
+  if "id" not in request.form.keys() or not request.form['id'] or "title" not in request.form.keys():
+    return "Both ObjectId and new title required"
+  
+  # Attempt to connect to our database
+  articles_collection = connect_db()
+  
+  # Attempt to update article
+  articles_collection.update({'_id':ObjectId(request.form['id'])},{"$set":{"title":request.form['title']}})
+  
+  return "Updating article with id %s to have title %s" % (request.form['id'], request.form['title'])
 
 # Database connection
 def connect_db():
