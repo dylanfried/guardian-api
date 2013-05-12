@@ -25,7 +25,7 @@ def fetch_news():
   articles_collection = connect_db()
   
   # Access the Guardian API to grab results
-  request_uri = "http://content.guardianapis.com/search?q=" + search_term + "&format=json&pageSize=5"
+  request_uri = "http://content.guardianapis.com/search?q=" + search_term + "&format=json&pageSize=5&show-fields=thumbnail"
   try:
     guardian_response = requests.get(request_uri)
   except requests.ConnectionError:
@@ -36,7 +36,13 @@ def fetch_news():
       new_article = {"title":article["webTitle"],
                      "image_url":"",
                      "terms":[search_term]}
-      articles_collection.insert(new_article)
+      # Check to make sure that the thumbnail field is included because
+      # not all articles have thumbnails
+      if "fields" in article.keys() and "thumbnail" in article["fields"].keys():
+        new_article["image_url"] = article["fields"]["thumbnail"]
+      # Check to see if an article with this title already exists:
+      if not articles_collection.find_one({"title":new_article['title']}):
+        articles_collection.insert(new_article)
   return "FETCHING NEWS with search term: '%s'" % search_term
 
 # Articles
